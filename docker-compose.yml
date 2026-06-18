@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  forgesign:
+    build: 
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: agentos_forgesign
+    ports:
+      - "8012:8012"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_URL=postgresql://postgres:postgres@postgres:5432/agentos
+    depends_on:
+      - redis
+      - postgres
+      - chromadb
+    networks:
+      - agentos_mesh
+
+  forgesign_worker:
+    build: 
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: agentos_forgesign_worker
+    command: celery -A core.worker.celery_app worker --loglevel=info
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - POSTGRES_URL=postgresql://postgres:postgres@postgres:5432/agentos
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - agentos_mesh
+
+# Assuming the core infrastructure (redis, postgres, chromadb) is defined 
+# in the master AgentOS docker-compose.yml file.
+
+networks:
+  agentos_mesh:
+    external: true
